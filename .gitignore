@@ -1,0 +1,9 @@
+# System
+.DS_Store
+
+# Integrated development environment
+.idea
+.vscode
+
+# Cache
+build

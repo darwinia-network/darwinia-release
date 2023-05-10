@@ -1,0 +1,56 @@
+name: Release tracker
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+env:
+  AUTH: ${{ secrets.GITHUB_TOKEN }}
+  RUST_TOOLCHAIN: nightly
+  PYTHON_VERSION: "3.10"
+  RUNTIME_OVERRIDES_LINK: https://github.com/darwinia-network/runtime-overrides/releases/download
+  RUNTIME_OVERRIDES_VERSION: v0.2.0
+  BRANCH: pango
+  REPOSITORY: darwinia-common
+jobs:
+  track-release:
+    name: Track ${{ matrix.target.branch }} releases
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          [
+            { repository: darwinia, branch: darwinia },
+            { repository: darwinia-common, branch: pango },
+          ]
+    steps:
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }} toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          default: true
+      - name: Install Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install runtime-overrides ${{ env.RUNTIME_OVERRIDES_VERSION }}
+        run: |
+          curl -L ${{ env.RUNTIME_OVERRIDES_LINK }}/${{ env.RUNTIME_OVERRIDES_VERSION }}/runtime-overrides.tar.zst | tar --zst -xv
+          sudo mv runtime-overrides /usr/bin
+          sudo chmod u+x /usr/bin/runtime-overrides
+      - name: Fetch latest code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.target.branch }}
+      - name: Run
+        run: |
+          pip install -r .github/requirements.txt
+          python3 .github/track.py ${{ matrix.target.repository }}
+      - name: Commit
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: ${{ matrix.target.branch }}
+          commit_user_name: AurevoirXavier
+          commit_user_email: xavier@inv.cafe
+          commit_author: AurevoirXavier <xavier@inv.cafe>
+          commit_message: Apply Automatic Changes
