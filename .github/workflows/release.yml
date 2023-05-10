@@ -1,0 +1,73 @@
+name: Release mainnets
+on:
+  release:
+    types: [created]
+
+env:
+  PYTHON_VERSION: "3.11"
+  RUNTIME_OVERRIDES_LINK: https://github.com/darwinia-network/runtime-overrides/releases/download
+  RUNTIME_OVERRIDES_VERSION: v0.5.0
+jobs:
+  release-mainnets:
+    name: Release mainnets
+    runs-on: ubuntu-latest
+    if: github.event.client_payload.release == 'mainnets'
+    strategy:
+      matrix:
+        target: [darwinia, crab]
+    steps:
+      - name: Install Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install runtime-overrides ${{ env.RUNTIME_OVERRIDES_VERSION }}
+        run: |
+          curl -L ${{ env.RUNTIME_OVERRIDES_LINK }}/${{ env.RUNTIME_OVERRIDES_VERSION }}/runtime-overrides.tar.zst | tar --zst -xv
+          sudo mv runtime-overrides /usr/bin
+          sudo chmod u+x /usr/bin/runtime-overrides
+      - name: Fetch latest code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.target }}
+      - name: Run
+        run: python3 .github/release.py ${{ github.event.client_payload.tag }} ${{ matrix.target }}
+      - name: Commit
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: ${{ matrix.target }}
+          commit_user_name: AurevoirXavier
+          commit_user_email: xavier@inv.cafe
+          commit_author: AurevoirXavier <xavier@inv.cafe>
+          commit_message: Apply Automatic Changes
+
+  release-testnets:
+    name: Release testnets
+    runs-on: ubuntu-latest
+    if: github.event.client_payload.release == 'testnets'
+    strategy:
+      matrix:
+        target: [pangoro, pangolin]
+    steps:
+      - name: Install Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install runtime-overrides ${{ env.RUNTIME_OVERRIDES_VERSION }}
+        run: |
+          curl -L ${{ env.RUNTIME_OVERRIDES_LINK }}/${{ env.RUNTIME_OVERRIDES_VERSION }}/runtime-overrides.tar.zst | tar --zst -xv
+          sudo mv runtime-overrides /usr/bin
+          sudo chmod u+x /usr/bin/runtime-overrides
+      - name: Fetch latest code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.target }}
+      - name: Run
+        run: python3 .github/release.py ${{ github.event.client_payload.tag }} ${{ matrix.target }}
+      - name: Commit
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: ${{ matrix.target }}
+          commit_user_name: AurevoirXavier
+          commit_user_email: xavier@inv.cafe
+          commit_author: AurevoirXavier <xavier@inv.cafe>
+          commit_message: Apply Automatic Changes
