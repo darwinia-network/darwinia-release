@@ -30,7 +30,7 @@ jobs:
         with:
           ref: ${{ matrix.target }}
       - name: Run
-        run: python3 .github/release.py ${{ github.event.client_payload.tag }} ${{ matrix.target }}
+        run: python3 .github/release.py ${{ github.event.client_payload.ref }} ${{ matrix.target }}
       - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
@@ -62,7 +62,7 @@ jobs:
         with:
           ref: ${{ matrix.target }}
       - name: Run
-        run: python3 .github/release.py ${{ github.event.client_payload.tag }} ${{ matrix.target }}
+        run: python3 .github/release.py ${{ github.event.client_payload.ref }} ${{ matrix.target }}
       - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
