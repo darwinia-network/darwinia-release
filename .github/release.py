@@ -17,7 +17,7 @@ subprocess.run([
     runtime,
     '-o',
     '.'
-])
+]).check_returncode()
 
 with open('CHANGELOG', 'a+') as f:
     f.write(f'Generated {tag} at {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}\n')
