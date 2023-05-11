@@ -1,7 +1,7 @@
-name: Release mainnets
+name: Release
 on:
-  release:
-    types: [created]
+  repository_dispatch:
+    types: [create]
 
 env:
   PYTHON_VERSION: "3.11"
