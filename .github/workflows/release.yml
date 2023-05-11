@@ -6,7 +6,7 @@ on:
 env:
   PYTHON_VERSION: "3.11"
   RUNTIME_OVERRIDES_LINK: https://github.com/darwinia-network/runtime-overrides/releases/download
-  RUNTIME_OVERRIDES_VERSION: v0.5.0
+  RUNTIME_OVERRIDES_VERSION: v0.5.1
 jobs:
   release-mainnets:
     name: Release mainnets
@@ -16,6 +16,8 @@ jobs:
       matrix:
         target: [darwinia, crab]
     steps:
+      - name: Setup build environment
+        run: apt update -y && apt install --no-install-recommends -y protobuf-compiler
       - name: Install Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v4
         with:
@@ -38,7 +40,7 @@ jobs:
           commit_user_name: AurevoirXavier
           commit_user_email: xavier@inv.cafe
           commit_author: AurevoirXavier <xavier@inv.cafe>
-          commit_message: Apply Automatic Changes
+          commit_message: Release `${{ github.event.client_payload.ref }}`
 
   release-testnets:
     name: Release testnets
@@ -48,6 +50,8 @@ jobs:
       matrix:
         target: [pangoro, pangolin]
     steps:
+      - name: Setup build environment
+        run: apt update -y && apt install --no-install-recommends -y protobuf-compiler
       - name: Install Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v4
         with:
@@ -70,4 +74,4 @@ jobs:
           commit_user_name: AurevoirXavier
           commit_user_email: xavier@inv.cafe
           commit_author: AurevoirXavier <xavier@inv.cafe>
-          commit_message: Apply Automatic Changes
+          commit_message: Release `${{ github.event.client_payload.ref }}`
