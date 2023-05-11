@@ -22,9 +22,9 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install runtime-overrides ${{ env.RUNTIME_OVERRIDES_VERSION }}
         run: |
-          curl -L ${{ env.RUNTIME_OVERRIDES_LINK }}/${{ env.RUNTIME_OVERRIDES_VERSION }}/runtime-overrides.tar.zst | tar --zst -xv
-          sudo mv runtime-overrides /usr/bin
-          sudo chmod u+x /usr/bin/runtime-overrides
+          curl -L ${{ env.RUNTIME_OVERRIDES_LINK }}/${{ env.RUNTIME_OVERRIDES_VERSION }}/rtor.tar.zst | tar --zst -xv
+          sudo mv rtor /usr/bin
+          sudo chmod u+x /usr/bin/rtor
       - name: Fetch latest code
         uses: actions/checkout@v3
         with:
@@ -54,9 +54,9 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install runtime-overrides ${{ env.RUNTIME_OVERRIDES_VERSION }}
         run: |
-          curl -L ${{ env.RUNTIME_OVERRIDES_LINK }}/${{ env.RUNTIME_OVERRIDES_VERSION }}/runtime-overrides.tar.zst | tar --zst -xv
-          sudo mv runtime-overrides /usr/bin
-          sudo chmod u+x /usr/bin/runtime-overrides
+          curl -L ${{ env.RUNTIME_OVERRIDES_LINK }}/${{ env.RUNTIME_OVERRIDES_VERSION }}/rtor.tar.zst | tar --zst -xv
+          sudo mv rtor /usr/bin
+          sudo chmod u+x /usr/bin/rtor
       - name: Fetch latest code
         uses: actions/checkout@v3
         with:
