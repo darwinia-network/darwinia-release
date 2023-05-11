@@ -17,7 +17,7 @@ jobs:
         target: [darwinia, crab]
     steps:
       - name: Setup build environment
-        run: apt update -y && apt install --no-install-recommends -y protobuf-compiler
+        run: sudo apt update -y && sudo apt install --no-install-recommends -y protobuf-compiler
       - name: Install Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v4
         with:
@@ -51,7 +51,7 @@ jobs:
         target: [pangoro, pangolin]
     steps:
       - name: Setup build environment
-        run: apt update -y && apt install --no-install-recommends -y protobuf-compiler
+        run: sudo apt update -y && sudo apt install --no-install-recommends -y protobuf-compiler
       - name: Install Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v4
         with:
