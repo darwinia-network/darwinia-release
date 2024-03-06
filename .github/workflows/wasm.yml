@@ -6,7 +6,7 @@ on:
 
 env:
   PYTHON_VERSION: 3.12
-  RUNTIME_OVERRIDES_LINK: https://github.com/darwinia-network/runtime-override/releases/download/v0.5.3/rtor.tar.zst
+  RUNTIME_OVERRIDES_LINK: https://github.com/darwinia-network/runtime-override/releases/download/v0.5.4/rtor.tar.zst
 jobs:
   mainnet:
     name: Release WASM mainnet
@@ -33,7 +33,7 @@ jobs:
         with:
           ref: ${{ matrix.network }}
       - name: Run
-        run: python3 .github/runtime-override.py ${{ github.event.client_payload.ref }} ${{ matrix.network }} ${{ matrix.features }}
+        run: python3 .github/wasm.py ${{ github.event.client_payload.ref }} ${{ matrix.network }} ${{ matrix.features }}
       - name: Push
         run: |
           git config --global user.email "action@github.com"
@@ -67,7 +67,7 @@ jobs:
         with:
           ref: ${{ matrix.network }}
       - name: Run
-        run: python3 .github/runtime-override.py ${{ github.event.client_payload.ref }} ${{ matrix.network }} ${{ matrix.features }}
+        run: python3 .github/wasm.py ${{ github.event.client_payload.ref }} ${{ matrix.network }} ${{ matrix.features }}
       - name: Push
         run: |
           git config --global user.email "action@github.com"
