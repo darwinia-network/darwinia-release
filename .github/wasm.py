@@ -7,6 +7,7 @@ features = sys.argv[3]
 features_ = features.replace(",", "-")
 cmd = [
     "rtor",
+    "-n",
     "-g",
     "https://github.com/darwinia-network/darwinia",
     "-t",

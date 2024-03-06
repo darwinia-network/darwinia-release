@@ -3,19 +3,19 @@ on:
   workflow_dispatch:
     inputs:
       network:
-        description: 'Network'
+        description: "Network"
         required: true
         type: choice
         options:
           - mainnet
           - testnet
       tag:
-        description: 'Release tag'
+        description: "Release tag"
         type: string
 
 env:
+  MATERIAL_LINK: https://raw.githubusercontent.com/darwinia-network/darwinia-releases/main/.github
   PYTHON_VERSION: 3.12
-  WASM_PY_LINK: https://raw.githubusercontent.com/darwinia-network/darwinia-releases/main/.github/wasm.py
   RUNTIME_OVERRIDES_LINK: https://github.com/darwinia-network/runtime-override/releases/download/v0.5.4/rtor.tar.zst
 jobs:
   mainnet:
@@ -44,7 +44,7 @@ jobs:
           ref: ${{ matrix.network }}
       - name: Run
         run: |
-          curl -o ../wasm.py ${{ env.WASM_PY_LINK }}
+          curl -o ../wasm.py ${{ env.MATERIAL_LINK }}/wasm.py
           python3 ../wasm.py ${{ github.event.inputs.tag }} ${{ matrix.network }} ${{ matrix.features }}
       - name: Push
         run: |
@@ -81,7 +81,7 @@ jobs:
           ref: ${{ matrix.network }}
       - name: Run
         run: |
-          curl -o ../wasm.py ${{ env.WASM_PY_LINK }}
+          curl -o ../wasm.py ${{ env.MATERIAL_LINK }}/wasm.py
           python3 ../wasm.py ${{ github.event.inputs.tag }} ${{ matrix.network }} ${{ matrix.features }}
       - name: Push
         run: |
