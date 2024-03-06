@@ -1,5 +1,4 @@
-import os
-import sys
+import os, sys
 
 import requests
 
@@ -62,25 +61,25 @@ def tag2spec_version(tag: str) -> str:
     return "".join(parts)
 
 
-def dispatch_release(github_token: str, network: str):
-    response = requests.post(
-        "https://api.github.com/repos/darwinia-network/darwinia-release/dispatches",
-        headers={
-            "Authorization": f"token {github_token}",
-            "Accept": "application/vnd.github.everest-preview+json",
-        },
-        json={
-            "event_type": "node",
-            "client_payload": {"network": network},
-        },
-    )
-
-    if response.status_code == 204:
-        print("workflow dispatch event created successfully")
-    else:
-        print(
-            f"error while creating workflow dispatch event: {response.status_code}, {response.text}"
-        )
+# def dispatch_release(github_token: str, network: str):
+#     response = requests.post(
+#         "https://api.github.com/repos/darwinia-network/darwinia-release/dispatches",
+#         headers={
+#             "Authorization": f"token {github_token}",
+#             "Accept": "application/vnd.github.everest-preview+json",
+#         },
+#         json={
+#             "event_type": "node",
+#             "client_payload": {"network": network},
+#         },
+#     )
+#
+#     if response.status_code == 204:
+#         print("workflow dispatch event created successfully")
+#     else:
+#         print(
+#             f"error while creating workflow dispatch event: {response.status_code}, {response.text}"
+#         )
 
 
 crab_csv = get_spec_version("darwinia")
@@ -97,6 +96,8 @@ if gh_tk is None:
     print("`GITHUB_TOKEN` ENV var is not set")
     sys.exit(-1)
 if crab_csv != release_sv:
-    dispatch_release(gh_tk, "crab")
+    pass
+    # dispatch_release(gh_tk, "crab")
 if darwinia_csv != release_sv:
-    dispatch_release(gh_tk, "darwinia")
+    pass
+    # dispatch_release(gh_tk, "darwinia")
