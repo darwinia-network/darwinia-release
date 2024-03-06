@@ -15,6 +15,7 @@ on:
 
 env:
   PYTHON_VERSION: 3.12
+  WASM_PY_LINK: https://raw.githubusercontent.com/darwinia-network/darwinia-releases/main/.github/wasm.py
   RUNTIME_OVERRIDES_LINK: https://github.com/darwinia-network/runtime-override/releases/download/v0.5.4/rtor.tar.zst
 jobs:
   mainnet:
@@ -42,7 +43,9 @@ jobs:
         with:
           ref: ${{ matrix.network }}
       - name: Run
-        run: python3 .github/wasm.py ${{ github.event.inputs.tag }} ${{ matrix.network }} ${{ matrix.features }}
+        run: |
+          curl -o ../wasm.py ${{ env.WASM_PY_LINK }}
+          python3 ../wasm.py ${{ github.event.inputs.tag }} ${{ matrix.network }} ${{ matrix.features }}
       - name: Push
         run: |
           git config --global user.email "action@github.com"
@@ -76,7 +79,9 @@ jobs:
         with:
           ref: ${{ matrix.network }}
       - name: Run
-        run: python3 .github/wasm.py ${{ github.event.inputs.tag }} ${{ matrix.network }} ${{ matrix.features }}
+        run: |
+          curl -o ../wasm.py ${{ env.WASM_PY_LINK }}
+          python3 ../wasm.py ${{ github.event.inputs.tag }} ${{ matrix.network }} ${{ matrix.features }}
       - name: Push
         run: |
           git config --global user.email "action@github.com"
