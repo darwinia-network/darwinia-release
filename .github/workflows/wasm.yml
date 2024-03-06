@@ -11,7 +11,7 @@ jobs:
   mainnet:
     name: Release WASM mainnet
     runs-on: ubuntu-latest
-    if: github.event.client_payload.release == 'mainnet'
+    if: github.event.client_payload.network == 'mainnet'
     strategy:
       matrix:
         network: [darwinia, crab]
@@ -33,19 +33,19 @@ jobs:
         with:
           ref: ${{ matrix.network }}
       - name: Run
-        run: python3 .github/wasm.py ${{ github.event.client_payload.ref }} ${{ matrix.network }} ${{ matrix.features }}
+        run: python3 .github/wasm.py ${{ github.event.client_payload.tag }} ${{ matrix.network }} ${{ matrix.features }}
       - name: Push
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git commit -am "Release `${{ github.event.client_payload.ref }}`"
+          git commit -am "Release `${{ github.event.client_payload.tag }}`"
           git pull --rebase --no-interaction origin ${{ matrix.network }}
           git push origin ${{ matrix.network }}
 
   testnet:
     name: Release WASM testnet
     runs-on: ubuntu-latest
-    if: github.event.client_payload.release == 'testnet'
+    if: github.event.client_payload.network == 'testnet'
     strategy:
       matrix:
         network: [pangolin]
@@ -67,11 +67,11 @@ jobs:
         with:
           ref: ${{ matrix.network }}
       - name: Run
-        run: python3 .github/wasm.py ${{ github.event.client_payload.ref }} ${{ matrix.network }} ${{ matrix.features }}
+        run: python3 .github/wasm.py ${{ github.event.client_payload.tag }} ${{ matrix.network }} ${{ matrix.features }}
       - name: Push
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git commit -am "Release `${{ github.event.client_payload.ref }}`"
+          git commit -am "Release `${{ github.event.client_payload.tag }}`"
           git pull --rebase --no-interaction origin ${{ matrix.network }}
           git push origin ${{ matrix.network }}
