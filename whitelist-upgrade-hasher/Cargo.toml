@@ -1,0 +1,9 @@
+[package]
+edition = "2021"
+name    = "wuh"
+version = "0.1.0"
+
+[dependencies]
+# crates.io
+array-bytes = { version = "6.2" }
+blake2-rfc  = { version = "0.2" }
