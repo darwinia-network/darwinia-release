@@ -11,20 +11,27 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - name: ocvw
+            path: on-chain-version-watcher
+          - name: wuh
+            path: whitelist-upgrade-hasher
     steps:
       - name: Fetch latest code
         uses: actions/checkout@v4
       - name: Build
-        run: cd whitelist-upgrade-hasher && cargo b -r --locked
+        run: cd ${{ matrix.target.path }} && cargo b -r --locked
       - name: Compress
         run: |
-          mv whitelist-upgrade-hasher/target/release/wuh .
-          zstd --ultra -22 -o wuh.zst wuh
+          mv ${{ matrix.target.path }}/target/release/${{ matrix.target.name }} .
+          zstd --ultra -22 -o ${{ matrix.target.name }}.zst ${{ matrix.target.name }}
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wuh
-          path: wuh.zst
+          name: artifact-${{ matrix.target.name }}
+          path: ${{ matrix.target.name }}.zst
           retention-days: 1
 
   release:
@@ -37,7 +44,7 @@ jobs:
       - name: Hash
         run: |
           mkdir -p artifacts
-          mv wuh/* artifacts/
+          mv artifact-*/* artifacts/
           cd artifacts
           sha256sum * | tee ../SHA256
           md5sum * | tee ../MD5
