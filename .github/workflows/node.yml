@@ -1,0 +1,39 @@
+name: Release node
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: "Network"
+        required: true
+        type: choice
+        options:
+          - darwinia
+          - crab
+          - pangolin
+      tag:
+        description: "Release tag"
+        type: string
+
+env:
+  ARTIFACT_LINK_PREFIX: https://github.com/darwinia-network/darwinia/releases/download
+
+jobs:
+  release-node:
+    name: Release ${{ github.event.inputs.network }} node
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare artifacts
+        run: |
+          mkdir artifacts
+          curl -fLO ${{ env.ARTIFACT_LINK_PREFIX }}/${{ github.event.inputs.tag }}/darwinia-x86_64-linux-gnu.tar.bz2
+          curl -fLO ${{ env.ARTIFACT_LINK_PREFIX }}/${{ github.event.inputs.tag }}/darwinia-x86_64-linux-gnu.tar.zst
+          mv darwinia-x86_64-linux-gnu.tar.* artifacts/
+      - name: Publish
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/*
+          prerelease: ${{ startsWith(github.event.inputs.tag, 'pango') }}
+          tag_name: ${{ github.event.inputs.tag }}
+          target_commitish: ${{ github.event.inputs.network }}
+          token: ${{ secrets.GITHUB_TOKEN }}

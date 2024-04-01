@@ -17,6 +17,7 @@ env:
   MATERIAL_LINK: https://raw.githubusercontent.com/darwinia-network/darwinia-releases/main/.github
   PYTHON_VERSION: 3.12
   RUNTIME_OVERRIDES_LINK: https://github.com/darwinia-network/runtime-override/releases/download/v0.5.4/rtor.tar.zst
+
 jobs:
   mainnet:
     name: Release WASM mainnet
