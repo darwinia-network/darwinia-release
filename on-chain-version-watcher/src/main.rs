@@ -1,7 +1,7 @@
 // std
 use std::{env, error::Error, process};
 // crates.io
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use subrpcer::{client::u, state};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
@@ -25,24 +25,24 @@ impl Watcher {
     fn process(&self) -> Result<()> {
         for n in self.networks {
             #[allow(clippy::type_complexity)]
-            let f: Box<dyn Fn(&str) -> Result<u32>> = match *n {
+            let f: Box<dyn Fn(&str) -> Result<(String, u32)>> = match *n {
                 "crab" | "darwinia" => Box::new(|r| self.github_release_version_of(r)),
                 "pangolin" => Box::new(|r| self.github_pre_release_version_of(r)),
                 _ => unreachable!(),
             };
 
-            self.check(n, f)?;
+            self.check_and_release(n, f)?;
         }
 
         Ok(())
     }
 
-    fn check<F>(&self, network: &str, github_version_of: F) -> Result<()>
+    fn check_and_release<F>(&self, network: &str, github_version_of: F) -> Result<()>
     where
-        F: Fn(&str) -> Result<u32>,
+        F: Fn(&str) -> Result<(String, u32)>,
     {
-        let github_version_d = github_version_of("darwinia")?;
-        let github_version_dr = github_version_of("darwinia-release")?;
+        let (tag, github_version_d) = github_version_of("darwinia")?;
+        let (_, github_version_dr) = github_version_of("darwinia-release")?;
 
         if github_version_d == github_version_dr {
             println!("we already have the latest version");
@@ -53,7 +53,7 @@ impl Watcher {
         let on_chain_version = self.on_chain_version(network)?;
 
         if on_chain_version == github_version_d {
-            self.release()?;
+            self.release(network, &tag)?;
         } else {
             println!("runtime has not been updated to the latest version yet");
 
@@ -63,24 +63,46 @@ impl Watcher {
         Ok(())
     }
 
-    fn release(&self) -> Result<()> {
+    fn release(&self, network: &str, tag: &str) -> Result<()> {
+        #[derive(Debug, Serialize)]
+        struct Payload {
+            r#ref: String,
+            inputs: Inputs,
+        }
+        #[derive(Debug, Serialize)]
+        struct Inputs {
+            network: String,
+            tag: String,
+        }
+
+        let response = ureq::post("https://api.github.com/repos/darwinia-network/darwinia-release/actions/workflows/node.yml/dispatches")
+            .set("Authorization", &format!("Bearer {}", self.github_token))
+            .set("Accept", "application/vnd.github+json")
+            .send_json(Payload {
+                r#ref: "main".into(),
+                inputs: Inputs {
+                    network: network.into(),
+                    tag: tag.into(),
+                },
+            })?;
+
         Ok(())
     }
 
-    fn github_release_version_of(&self, repository: &str) -> Result<u32> {
-        let ver = ureq::get(&format!(
+    fn github_release_version_of(&self, repository: &str) -> Result<(String, u32)> {
+        let tag = ureq::get(&format!(
             "https://api.github.com/repos/darwinia-network/{repository}/releases/latest"
         ))
         .set("Authorization", &format!("Bearer {}", self.github_token))
         .call()?
         .into_json::<GithubReleaseVersion>()?
         .tag_name;
-        let ver = tag2spec_version(&ver)?;
+        let ver = tag2spec_version(&tag)?;
 
-        Ok(ver)
+        Ok((tag, ver))
     }
 
-    fn github_pre_release_version_of(&self, repository: &str) -> Result<u32> {
+    fn github_pre_release_version_of(&self, repository: &str) -> Result<(String, u32)> {
         let releases = ureq::get(&format!(
             "https://api.github.com/repos/darwinia-network/{repository}/releases"
         ))
@@ -94,7 +116,7 @@ impl Watcher {
             .tag_name;
         let ver = tag[6..].parse()?;
 
-        Ok(ver)
+        Ok((tag, ver))
     }
 
     fn on_chain_version(&self, network: &str) -> Result<u32> {
