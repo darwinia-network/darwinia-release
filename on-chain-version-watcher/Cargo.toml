@@ -1,0 +1,11 @@
+[package]
+edition = "2021"
+name    = "ocvw"
+version = "0.1.0"
+
+[dependencies]
+# crates.io
+serde      = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0" }
+subrpcer   = { version = "0.11", features = ["ureq-client"] }
+ureq       = { version = "2.9", features = ["json"] }
