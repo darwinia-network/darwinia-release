@@ -1,0 +1,20 @@
+name: Watch
+on:
+  schedule:
+    - cron: "0 * * * *"
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  OCVW_LINK: https://github.com/darwinia-network/darwinia-release/releases/download/v0.4.0/ocvw.zst
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install ocvw
+        run: |
+          curl -L ${{ env.OCVW_LINK }} | tar --zst -xv
+          sudo mv ocvw /usr/bin
+          sudo chmod u+x /usr/bin/ocvw
+      - name: Watch
+        run: ocvw

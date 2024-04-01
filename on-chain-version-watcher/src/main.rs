@@ -53,6 +53,8 @@ impl Watcher {
         let on_chain_version = self.on_chain_version(network)?;
 
         if on_chain_version == github_version_d {
+            println!("going to release the latest version {} to {}", tag, network);
+
             self.release(network, &tag)?;
         } else {
             println!("runtime has not been updated to the latest version yet");
