@@ -1,5 +1,5 @@
 // std
-use std::{env, error::Error, process};
+use std::{env, error::Error};
 // crates.io
 use serde::{Deserialize, Serialize};
 use subrpcer::{client::u, state};
@@ -47,7 +47,7 @@ impl Watcher {
         if github_version_d == github_version_dr {
             println!("we already have the latest version");
 
-            process::exit(-1);
+            return Ok(());
         }
 
         let on_chain_version = self.on_chain_version(network)?;
@@ -57,7 +57,7 @@ impl Watcher {
         } else {
             println!("runtime has not been updated to the latest version yet");
 
-            process::exit(-1);
+            return Ok(());
         }
 
         Ok(())

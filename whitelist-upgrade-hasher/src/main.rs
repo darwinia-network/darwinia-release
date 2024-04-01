@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         0x02,
     ];
 
-    c.extend_from_slice(&h1);
+    c.extend_from_slice(h1);
     c.push(0x01);
 
     let h2 = blake2b::blake2b(32, &[], &c);
