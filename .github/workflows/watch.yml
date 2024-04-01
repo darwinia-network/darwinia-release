@@ -6,7 +6,7 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  OCVW_LINK: https://github.com/darwinia-network/darwinia-release/releases/download/v0.5.0/ocvw.zst
+  OCVW_LINK: https://github.com/darwinia-network/darwinia-release/releases/download/v0.6.0/ocvw.zst
 
 jobs:
   watch:

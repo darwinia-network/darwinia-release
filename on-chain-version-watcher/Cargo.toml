@@ -1,10 +1,11 @@
 [package]
 edition = "2021"
 name    = "ocvw"
-version = "0.5.0"
+version = "0.6.0"
 
 [dependencies]
 # crates.io
+regex      = { version = "1.10" }
 serde      = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0" }
 subrpcer   = { version = "0.11", features = ["ureq-client"] }

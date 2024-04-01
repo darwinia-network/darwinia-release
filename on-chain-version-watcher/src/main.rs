@@ -1,6 +1,7 @@
 // std
 use std::{borrow::Cow, env, error::Error};
 // crates.io
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use subrpcer::{client::u, state};
 
@@ -99,9 +100,13 @@ impl Watcher {
         .call()?
         .into_json::<GithubReleaseVersion>()?
         .tag_name;
-        let ver = tag2spec_version(&tag)?;
+        let tag = Regex::new(r".*v(\d+\.\d+\.\d+(-\d+)?)")?
+            .captures(&tag)
+            .and_then(|c| c.get(1).map(|m| m.as_str()))
+            .expect("invalid tag name");
+        let ver = tag2spec_version(tag)?;
 
-        Ok((tag, ver))
+        Ok((tag.into(), ver))
     }
 
     fn github_pre_release_version_of(&self, repository: &str) -> Result<(String, u32)> {
@@ -114,9 +119,13 @@ impl Watcher {
 
         if let Some(g) = releases.into_iter().find(|release| release.prerelease) {
             let tag = g.tag_name;
-            let ver = tag[6..].parse()?;
+            let tag = Regex::new(r".*pango-(\d{4})")?
+                .captures(&tag)
+                .and_then(|c| c.get(1).map(|m| m.as_str()))
+                .expect("invalid tag name");
+            let ver = tag.parse()?;
 
-            Ok((tag, ver))
+            Ok((tag.into(), ver))
         } else {
             Ok(("".into(), 0))
         }
@@ -156,7 +165,7 @@ struct GithubReleaseVersion {
 }
 
 fn tag2spec_version(tag: &str) -> Result<u32> {
-    let tag = tag[1..].split('.').collect::<Vec<_>>();
+    let tag = tag.split('.').collect::<Vec<_>>();
     let mut ver = tag[0].parse::<u32>()? * 1_000 + tag[1].parse::<u32>()? * 100;
     let last_part = tag.last().unwrap().split('-').collect::<Vec<_>>();
 
