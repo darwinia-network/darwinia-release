@@ -1,5 +1,5 @@
 // std
-use std::{env, error::Error};
+use std::{borrow::Cow, env, error::Error};
 // crates.io
 use serde::{Deserialize, Serialize};
 use subrpcer::{client::u, state};
@@ -9,7 +9,7 @@ type Result<T> = std::result::Result<T, Box<dyn Error>>;
 fn main() -> Result<()> {
     let w = Watcher {
         github_token: env::var("GITHUB_TOKEN").expect("expect a GITHUB_TOKEN env var"),
-        networks: &["crab", "darwinia", "pangolin"],
+        networks: &["pangolin"],
     };
 
     w.process()?;
@@ -111,19 +111,24 @@ impl Watcher {
         .set("Authorization", &format!("Bearer {}", self.github_token))
         .call()?
         .into_json::<Vec<GithubReleaseVersion>>()?;
-        let tag = releases
-            .into_iter()
-            .find(|release| release.prerelease)
-            .ok_or("no pre-release found")?
-            .tag_name;
-        let ver = tag[6..].parse()?;
 
-        Ok((tag, ver))
+        if let Some(g) = releases.into_iter().find(|release| release.prerelease) {
+            let tag = g.tag_name;
+            let ver = tag[6..].parse()?;
+
+            Ok((tag, ver))
+        } else {
+            Ok(("".into(), 0))
+        }
     }
 
     fn on_chain_version(&self, network: &str) -> Result<u32> {
         let ver = u::send_jsonrpc(
-            &format!("https://{network}-rpc.darwiniacommunitydao.xyz"),
+            &if network == "darwinia" {
+                Cow::Borrowed("https://rpc.darwinia.network")
+            } else {
+                Cow::Owned(format!("https://{network}-rpc.darwinia.network"))
+            },
             &state::get_runtime_version(0, None::<()>),
         )?
         .into_json::<RpcResult>()?

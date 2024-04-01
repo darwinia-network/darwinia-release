@@ -34,6 +34,6 @@ jobs:
           files: |
             artifacts/*
           prerelease: ${{ startsWith(github.event.inputs.tag, 'pango') }}
-          tag_name: ${{ github.event.inputs.tag }}
+          tag_name: ${{ github.event.inputs.network }}-${{ github.event.inputs.tag }}
           target_commitish: ${{ github.event.inputs.network }}
           token: ${{ secrets.GITHUB_TOKEN }}
