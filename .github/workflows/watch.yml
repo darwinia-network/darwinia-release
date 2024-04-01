@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Install ocvw
         run: |
-          curl -L ${{ env.OCVW_LINK }} | tar --zst -xv
+          curl -L ${{ env.OCVW_LINK }} | zstd -o ocvw -d
           sudo mv ocvw /usr/bin
           sudo chmod u+x /usr/bin/ocvw
       - name: Watch
