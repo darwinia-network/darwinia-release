@@ -75,7 +75,7 @@ impl Watcher {
             tag: String,
         }
 
-        let response = ureq::post("https://api.github.com/repos/darwinia-network/darwinia-release/actions/workflows/node.yml/dispatches")
+        ureq::post("https://api.github.com/repos/darwinia-network/darwinia-release/actions/workflows/node.yml/dispatches")
             .set("Authorization", &format!("Bearer {}", self.github_token))
             .set("Accept", "application/vnd.github+json")
             .send_json(Payload {
