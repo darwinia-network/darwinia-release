@@ -9,7 +9,7 @@ type Result<T> = std::result::Result<T, Box<dyn Error>>;
 fn main() -> Result<()> {
     let w = Watcher {
         github_token: env::var("GITHUB_TOKEN").expect("expect a GITHUB_TOKEN env var"),
-        networks: &["pangolin"],
+        networks: &["crab", "darwinia", "pangolin"],
     };
 
     w.process()?;
