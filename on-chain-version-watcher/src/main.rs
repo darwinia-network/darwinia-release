@@ -1,69 +1,159 @@
 // std
-use std::{borrow::Cow, env, error::Error};
+use std::{borrow::Cow, env};
 // crates.io
+use anyhow::Result;
 use regex::Regex;
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use subrpcer::{client::u, state};
 
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
-
 fn main() -> Result<()> {
-    let w = Watcher {
-        github_token: env::var("GITHUB_TOKEN").expect("expect a GITHUB_TOKEN env var"),
-        networks: &["crab", "darwinia", "pangolin"],
-    };
-
-    w.process()?;
-
-    Ok(())
+    Watcher::new(
+        &env::var("GITHUB_TOKEN").expect("expect a GITHUB_TOKEN env var"),
+        &["crab", "darwinia", "pangolin"],
+    )
+    .process()
 }
 
 struct Watcher {
-    github_token: String,
+    github: GitHub,
     networks: &'static [&'static str],
 }
 impl Watcher {
+    fn new(github_token: &str, networks: &'static [&'static str]) -> Self {
+        Self {
+            github: GitHub::new(github_token),
+            networks,
+        }
+    }
+
     fn process(&self) -> Result<()> {
         for n in self.networks {
-            #[allow(clippy::type_complexity)]
-            let f: Box<dyn Fn(&str) -> Result<(String, u32)>> = match *n {
-                "crab" | "darwinia" => Box::new(|r| self.github_release_version_of(r)),
-                "pangolin" => Box::new(|r| self.github_pre_release_version_of(r)),
-                _ => unreachable!(),
-            };
-
-            self.check_and_release(n, f)?;
+            self.check_and_release(n)?;
         }
 
         Ok(())
     }
 
-    fn check_and_release<F>(&self, network: &str, github_version_of: F) -> Result<()>
-    where
-        F: Fn(&str) -> Result<(String, u32)>,
-    {
-        let (tag, github_version_d) = github_version_of("darwinia")?;
-        let (_, github_version_dr) = github_version_of("darwinia-release")?;
+    fn check_and_release(&self, network: &str) -> Result<()> {
+        let prerelease = network.starts_with("pango");
+        let version_d = self
+            .github
+            .latest_darwinia_release_of("darwinia", None, prerelease)?;
+        let version_dr = self.github.latest_darwinia_release_of(
+            "darwinia-release",
+            Some(network),
+            prerelease,
+        )?;
 
-        if github_version_d == github_version_dr {
-            println!("we already have the latest version");
+        println!("darwinia version        : {version_d:?}");
+        println!("darwinia-release version: {version_dr:?}");
+
+        if version_d.tag == version_dr.tag {
+            println!("{network} has already included the latest upgrade");
 
             return Ok(());
         }
 
-        let on_chain_version = self.on_chain_version(network)?;
-
-        if on_chain_version == github_version_d {
-            println!("going to release the latest version {} to {}", tag, network);
-
-            self.release(network, &tag)?;
+        let on_chain_version = self.on_chain_version(&if network == "darwinia" {
+            Cow::Borrowed("https://rpc.darwinia.network")
         } else {
-            println!("runtime has not been updated to the latest version yet");
+            Cow::Owned(format!("https://{network}-rpc.darwinia.network"))
+        })?;
+
+        if on_chain_version == version_d.spec {
+            println!("going to release the {version_d:?} to {network}");
+
+            self.github.release(network, &version_d.tag)?;
+        } else {
+            println!("{network} runtime has not been updated to the latest version yet");
 
             return Ok(());
         }
 
         Ok(())
+    }
+
+    fn on_chain_version(&self, uri: &str) -> Result<u32> {
+        let ver = u::send_jsonrpc(uri, &state::get_runtime_version(0, None::<()>))?
+            .into_json::<RpcResult>()?
+            .result
+            .spec_version;
+
+        Ok(ver)
+    }
+}
+
+#[derive(Debug)]
+struct GitHub {
+    token: String,
+}
+impl GitHub {
+    fn new(token: &str) -> Self {
+        Self {
+            token: token.into(),
+        }
+    }
+
+    fn get<T>(&self, uri: &str) -> Result<T>
+    where
+        T: DeserializeOwned,
+    {
+        Ok(ureq::get(uri)
+            .set("Authorization", &format!("Bearer {}", self.token))
+            .call()?
+            .into_json()?)
+    }
+
+    fn post<T>(&self, uri: &str, payload: T) -> Result<()>
+    where
+        T: Serialize,
+    {
+        ureq::post(uri)
+            .set("Authorization", &format!("Bearer {}", self.token))
+            .set("Accept", "application/vnd.github+json")
+            .send_json(payload)?;
+
+        Ok(())
+    }
+
+    fn latest_darwinia_release_of(
+        &self,
+        repository: &str,
+        branch: Option<&str>,
+        prerelease: bool,
+    ) -> Result<Version> {
+        let api = format!("https://api.github.com/repos/darwinia-network/{repository}/releases");
+        let releases = self.get::<Vec<GitHubRelease>>(&api)?;
+
+        for r in releases {
+            let re = if prerelease {
+                if !r.prerelease {
+                    continue;
+                }
+
+                Regex::new(r".*(pango-\d{4})").unwrap()
+            } else {
+                Regex::new(r".*(v\d+\.\d+\.\d+(-\d+)?)").unwrap()
+            };
+
+            if branch.map_or(true, |b| r.target_commitish == b) {
+                let tag = re
+                    .captures(&r.tag_name)
+                    .and_then(|c| c.get(1).map(|m| m.as_str()))
+                    .expect("invalid tag name");
+                let spec = tag2spec_version(tag, prerelease)?;
+
+                return Ok(Version {
+                    spec,
+                    tag: tag.into(),
+                });
+            }
+        }
+
+        Ok(Version {
+            spec: 0,
+            tag: "".into(),
+        })
     }
 
     fn release(&self, network: &str, tag: &str) -> Result<()> {
@@ -78,73 +168,16 @@ impl Watcher {
             tag: String,
         }
 
-        ureq::post("https://api.github.com/repos/darwinia-network/darwinia-release/actions/workflows/node.yml/dispatches")
-            .set("Authorization", &format!("Bearer {}", self.github_token))
-            .set("Accept", "application/vnd.github+json")
-            .send_json(Payload {
-                r#ref: "main".into(),
-                inputs: Inputs {
-                    network: network.into(),
-                    tag: tag.into(),
-                },
-            })?;
-
-        Ok(())
-    }
-
-    fn github_release_version_of(&self, repository: &str) -> Result<(String, u32)> {
-        let tag = ureq::get(&format!(
-            "https://api.github.com/repos/darwinia-network/{repository}/releases/latest"
-        ))
-        .set("Authorization", &format!("Bearer {}", self.github_token))
-        .call()?
-        .into_json::<GithubReleaseVersion>()?
-        .tag_name;
-        let tag = Regex::new(r".*v(\d+\.\d+\.\d+(-\d+)?)")?
-            .captures(&tag)
-            .and_then(|c| c.get(1).map(|m| m.as_str()))
-            .expect("invalid tag name");
-        let ver = tag2spec_version(tag)?;
-
-        Ok((tag.into(), ver))
-    }
-
-    fn github_pre_release_version_of(&self, repository: &str) -> Result<(String, u32)> {
-        let releases = ureq::get(&format!(
-            "https://api.github.com/repos/darwinia-network/{repository}/releases"
-        ))
-        .set("Authorization", &format!("Bearer {}", self.github_token))
-        .call()?
-        .into_json::<Vec<GithubReleaseVersion>>()?;
-
-        if let Some(g) = releases.into_iter().find(|release| release.prerelease) {
-            let tag = g.tag_name;
-            let tag = Regex::new(r".*pango-(\d{4})")?
-                .captures(&tag)
-                .and_then(|c| c.get(1).map(|m| m.as_str()))
-                .expect("invalid tag name");
-            let ver = tag.parse()?;
-
-            Ok((tag.into(), ver))
-        } else {
-            Ok(("".into(), 0))
-        }
-    }
-
-    fn on_chain_version(&self, network: &str) -> Result<u32> {
-        let ver = u::send_jsonrpc(
-            &if network == "darwinia" {
-                Cow::Borrowed("https://rpc.darwinia.network")
-            } else {
-                Cow::Owned(format!("https://{network}-rpc.darwinia.network"))
+        let api = "https://api.github.com/repos/darwinia-network/darwinia-release/actions/workflows/node.yml/dispatches";
+        let payload = Payload {
+            r#ref: "main".into(),
+            inputs: Inputs {
+                network: network.into(),
+                tag: tag.into(),
             },
-            &state::get_runtime_version(0, None::<()>),
-        )?
-        .into_json::<RpcResult>()?
-        .result
-        .spec_version;
+        };
 
-        Ok(ver)
+        self.post(api, payload)
     }
 }
 
@@ -159,29 +192,75 @@ struct OnChainVersion {
 }
 
 #[derive(Debug, Deserialize)]
-struct GithubReleaseVersion {
-    tag_name: String,
+struct GitHubRelease {
     prerelease: bool,
+    tag_name: String,
+    target_commitish: String,
 }
 
-fn tag2spec_version(tag: &str) -> Result<u32> {
-    let tag = tag.split('.').collect::<Vec<_>>();
-    let mut ver = tag[0].parse::<u32>()? * 1_000 + tag[1].parse::<u32>()? * 100;
-    let last_part = tag.last().unwrap().split('-').collect::<Vec<_>>();
+#[derive(Debug)]
+struct Version {
+    spec: u32,
+    tag: String,
+}
 
-    ver += last_part[0].parse::<u32>()? * 10;
+fn tag2spec_version(tag: &str, prerelease: bool) -> Result<u32> {
+    if prerelease {
+        Ok(tag[6..].parse()?)
+    } else {
+        let tag = tag[1..].split('.').collect::<Vec<_>>();
+        let mut ver = tag[0].parse::<u32>()? * 1_000 + tag[1].parse::<u32>()? * 100;
+        let last_part = tag.last().unwrap().split('-').collect::<Vec<_>>();
 
-    if last_part.len() == 2 {
-        ver += last_part[1].parse::<u32>()?;
+        ver += last_part[0].parse::<u32>()? * 10;
+
+        if last_part.len() == 2 {
+            ver += last_part[1].parse::<u32>()?;
+        }
+
+        Ok(ver)
     }
-
-    Ok(ver)
 }
 
 #[test]
 fn tag2spec_version_should_work() {
-    assert_eq!(tag2spec_version("v1.0.0").unwrap(), 1000);
-    assert_eq!(tag2spec_version("v1.2.0").unwrap(), 1200);
-    assert_eq!(tag2spec_version("v1.2.3").unwrap(), 1230);
-    assert_eq!(tag2spec_version("v1.2.3-1").unwrap(), 1231);
+    assert_eq!(tag2spec_version("v1.0.0", false).unwrap(), 1000);
+    assert_eq!(tag2spec_version("v1.2.0", false).unwrap(), 1200);
+    assert_eq!(tag2spec_version("v1.2.3", false).unwrap(), 1230);
+    assert_eq!(tag2spec_version("v1.2.3-1", false).unwrap(), 1231);
+    assert_eq!(tag2spec_version("pango-1234", true).unwrap(), 1234);
+}
+
+#[test]
+fn latest_darwinia_release_of_should_work() {
+    let github = GitHub::new(&env::var("GITHUB_TOKEN").unwrap());
+    let version = github
+        .latest_darwinia_release_of("darwinia", None, false)
+        .unwrap();
+
+    println!("latest release of darwinia is {version:?}");
+
+    let version = github
+        .latest_darwinia_release_of("darwinia", None, true)
+        .unwrap();
+
+    println!("latest prerelease of darwinia is {version:?}");
+
+    let version = github
+        .latest_darwinia_release_of("darwinia-release", Some("crab"), false)
+        .unwrap();
+
+    println!("latest release of darwinia-release is {version:?}");
+
+    let version = github
+        .latest_darwinia_release_of("darwinia-release", Some("darwinia"), false)
+        .unwrap();
+
+    println!("latest release of darwinia-release is {version:?}");
+
+    let version = github
+        .latest_darwinia_release_of("darwinia-release", Some("pangolin"), true)
+        .unwrap();
+
+    println!("latest prerelease of darwinia-release is {version:?}");
 }
