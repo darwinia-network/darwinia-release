@@ -56,7 +56,7 @@ jobs:
         run: |
           MESSAGE='${{ github.event.head_commit.message }}'
           DOCKER_IMAGE_TAG=ghcr.io/darwinia-network/darwinia:${{ github.event.inputs.tag }}
-          
+
           jq -n \
             --arg file playbooks/pangolin_nodes/host_vars/g1.testnets \
             --arg key .substrate_node_runner.node.image \
@@ -69,7 +69,7 @@ jobs:
             '{file: $file, key: $key, value: $value}' >> /tmp/changes.json
 
           MULTI_CHANGES=$(jq -crs '.' < /tmp/changes.json)
-          gh workflow run \
+          GITHUB_TOKEN=${{ secrets.GH_TKN_DARWINIA }} gh workflow run \
             trigger.yml \
             --ref=main \
             --repo=darwinia-network/ansible-playbooks \
