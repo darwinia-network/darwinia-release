@@ -124,23 +124,21 @@ impl GitHub {
     ) -> Result<Version> {
         let api = format!("https://api.github.com/repos/darwinia-network/{repository}/releases");
         let releases = self.get::<Vec<GitHubRelease>>(&api)?;
+        let re = if prerelease {
+            Regex::new(r".*(pango-\d{4})").unwrap()
+        } else {
+            Regex::new(r".*(v\d+\.\d+\.\d+(-\d+)?)").unwrap()
+        };
 
         for r in releases {
-            let re = if prerelease {
-                if !r.prerelease {
-                    continue;
-                }
-
-                Regex::new(r".*(pango-\d{4})").unwrap()
-            } else {
-                Regex::new(r".*(v\d+\.\d+\.\d+(-\d+)?)").unwrap()
-            };
-
+            if prerelease != r.prerelease {
+                continue;
+            }
             if branch.map_or(true, |b| r.target_commitish == b) {
                 let tag = re
                     .captures(&r.tag_name)
                     .and_then(|c| c.get(1).map(|m| m.as_str()))
-                    .expect("invalid tag name");
+                    .unwrap_or_else(|| panic!("invalid tag name {}", r.tag_name));
                 let spec = tag2spec_version(tag, prerelease)?;
 
                 return Ok(Version {
