@@ -56,39 +56,39 @@ jobs:
           git pull --rebase origin ${{ matrix.network }}
           git push origin ${{ matrix.network }}
 
-  testnet:
-    name: Release WASM testnet
-    runs-on: ubuntu-latest
-    if: github.event.inputs.network == 'testnet'
-    strategy:
-      matrix:
-        network: [pangolin]
-        features: [evm-tracing, force-debug]
-    steps:
-      - name: Setup build environment
-        run: sudo apt update -y && sudo apt install --no-install-recommends -y protobuf-compiler
-      - name: Install Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install runtime-override ${{ env.RUNTIME_OVERRIDES_VERSION }}
-        run: |
-          curl -L ${{ env.RUNTIME_OVERRIDES_LINK }} | tar --zst -xv
-          sudo mv rtor /usr/bin
-          sudo chmod u+x /usr/bin/rtor
-      - name: Fetch latest code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ matrix.network }}
-      - name: Run
-        run: |
-          curl -o ../wasm.py ${{ env.MATERIAL_LINK }}/wasm.py
-          python3 ../wasm.py ${{ github.event.inputs.tag }} ${{ matrix.network }} ${{ matrix.features }}
-      - name: Push
-        run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-          git add .
-          git commit -am "Release \`${{ github.event.inputs.tag }}\`"
-          git pull --rebase origin ${{ matrix.network }}
-          git push origin ${{ matrix.network }}
+  # testnet:
+  #   name: Release WASM testnet
+  #   runs-on: ubuntu-latest
+  #   if: github.event.inputs.network == 'testnet'
+  #   strategy:
+  #     matrix:
+  #       network: [pangolin]
+  #       features: [evm-tracing, force-debug]
+  #   steps:
+  #     - name: Setup build environment
+  #       run: sudo apt update -y && sudo apt install --no-install-recommends -y protobuf-compiler
+  #     - name: Install Python ${{ env.PYTHON_VERSION }}
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: ${{ env.PYTHON_VERSION }}
+  #     - name: Install runtime-override ${{ env.RUNTIME_OVERRIDES_VERSION }}
+  #       run: |
+  #         curl -L ${{ env.RUNTIME_OVERRIDES_LINK }} | tar --zst -xv
+  #         sudo mv rtor /usr/bin
+  #         sudo chmod u+x /usr/bin/rtor
+  #     - name: Fetch latest code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ matrix.network }}
+  #     - name: Run
+  #       run: |
+  #         curl -o ../wasm.py ${{ env.MATERIAL_LINK }}/wasm.py
+  #         python3 ../wasm.py ${{ github.event.inputs.tag }} ${{ matrix.network }} ${{ matrix.features }}
+  #     - name: Push
+  #       run: |
+  #         git config --global user.email "action@github.com"
+  #         git config --global user.name "GitHub Action"
+  #         git add .
+  #         git commit -am "Release \`${{ github.event.inputs.tag }}\`"
+  #         git pull --rebase origin ${{ matrix.network }}
+  #         git push origin ${{ matrix.network }}
