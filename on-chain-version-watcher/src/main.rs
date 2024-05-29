@@ -9,7 +9,7 @@ use subrpcer::{client::u, state};
 fn main() -> Result<()> {
     Watcher::new(
         &env::var("GITHUB_TOKEN").expect("expect a GITHUB_TOKEN env var"),
-        &["crab", "darwinia", "pangolin"],
+        &["crab", "darwinia", "koi"],
     )
     .process()
 }
@@ -257,7 +257,7 @@ fn latest_darwinia_release_of_should_work() {
     println!("latest release of darwinia-release is {version:?}");
 
     let version = github
-        .latest_darwinia_release_of("darwinia-release", Some("pangolin"), true)
+        .latest_darwinia_release_of("darwinia-release", Some("koi"), true)
         .unwrap();
 
     println!("latest prerelease of darwinia-release is {version:?}");
