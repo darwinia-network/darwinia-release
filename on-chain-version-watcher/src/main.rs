@@ -35,7 +35,7 @@ impl Watcher {
     }
 
     fn check_and_release(&self, network: &str) -> Result<()> {
-        let prerelease = network.starts_with("pango");
+        let prerelease = network.starts_with("koi");
         let version_d = self
             .github
             .latest_darwinia_release_of("darwinia", None, prerelease)?;
@@ -125,7 +125,7 @@ impl GitHub {
         let api = format!("https://api.github.com/repos/darwinia-network/{repository}/releases");
         let releases = self.get::<Vec<GitHubRelease>>(&api)?;
         let re = if prerelease {
-            Regex::new(r".*(pango-\d{4})").unwrap()
+            Regex::new(r".*(koi-\d{4})").unwrap()
         } else {
             Regex::new(r".*(v\d+\.\d+\.\d+(-\d+)?)").unwrap()
         };
@@ -204,7 +204,8 @@ struct Version {
 
 fn tag2spec_version(tag: &str, prerelease: bool) -> Result<u32> {
     if prerelease {
-        Ok(tag[6..].parse()?)
+		// TODO: accept dynamic size.
+        Ok(tag[4..].parse()?)
     } else {
         let tag = tag[1..].split('.').collect::<Vec<_>>();
         let mut ver = tag[0].parse::<u32>()? * 1_000 + tag[1].parse::<u32>()? * 100;
@@ -226,7 +227,7 @@ fn tag2spec_version_should_work() {
     assert_eq!(tag2spec_version("v1.2.0", false).unwrap(), 1200);
     assert_eq!(tag2spec_version("v1.2.3", false).unwrap(), 1230);
     assert_eq!(tag2spec_version("v1.2.3-1", false).unwrap(), 1231);
-    assert_eq!(tag2spec_version("pango-1234", true).unwrap(), 1234);
+    assert_eq!(tag2spec_version("koi-1234", true).unwrap(), 1234);
 }
 
 #[test]
