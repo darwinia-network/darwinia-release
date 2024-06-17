@@ -63,7 +63,15 @@ impl Watcher {
         if on_chain_version == version_d.spec {
             println!("going to release the {version_d:?} to {network}");
 
-            self.github.release(network, &version_d.tag)?;
+            let tag = if prerelease {
+                // Tag: koi-xxxx.
+                version_d.spec.to_string()
+            } else {
+                // Tag: darwinia-vx.x.x.
+                version_d.tag
+            };
+
+            self.github.release(network.to_owned(), tag)?;
         } else {
             println!("{network} runtime has not been updated to the latest version yet");
 
@@ -154,7 +162,7 @@ impl GitHub {
         })
     }
 
-    fn release(&self, network: &str, tag: &str) -> Result<()> {
+    fn release(&self, network: String, tag: String) -> Result<()> {
         #[derive(Debug, Serialize)]
         struct Payload {
             r#ref: String,
@@ -169,10 +177,7 @@ impl GitHub {
         let api = "https://api.github.com/repos/darwinia-network/darwinia-release/actions/workflows/node.yml/dispatches";
         let payload = Payload {
             r#ref: "main".into(),
-            inputs: Inputs {
-                network: network.into(),
-                tag: tag.into(),
-            },
+            inputs: Inputs { network, tag },
         };
 
         self.post(api, payload)
@@ -204,7 +209,7 @@ struct Version {
 
 fn tag2spec_version(tag: &str, prerelease: bool) -> Result<u32> {
     if prerelease {
-		// TODO: accept dynamic size.
+        // TODO: accept dynamic size.
         Ok(tag[4..].parse()?)
     } else {
         let tag = tag[1..].split('.').collect::<Vec<_>>();

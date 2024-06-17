@@ -33,7 +33,7 @@ jobs:
         with:
           files: |
             artifacts/*
-          prerelease: ${{ startsWith(github.event.inputs.tag, 'pango') }}
+          prerelease: ${{ startsWith(github.event.inputs.tag, 'koi') }}
           tag_name: ${{ github.event.inputs.network }}-${{ github.event.inputs.tag }}
           target_commitish: ${{ github.event.inputs.network }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -56,7 +56,6 @@ jobs:
         run: |
           MESSAGE='${{ github.event.head_commit.message }}'
           DOCKER_IMAGE_TAG=ghcr.io/darwinia-network/darwinia:${{ github.event.inputs.tag }}
-
           jq -n \
             --arg file playbooks/koi_nodes/host_vars/g1.testnets \
             --arg key .substrate_node_runner.node.image \
