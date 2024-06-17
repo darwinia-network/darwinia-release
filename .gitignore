@@ -2,8 +2,13 @@
 .DS_Store
 
 # Integrated development environment
-.idea
 .vscode
 
-# Cache
-build
+# Package manager
+## Cargo
+target
+## NPM
+node_modules
+
+# Test data
+tmp
