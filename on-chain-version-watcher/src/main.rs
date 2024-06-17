@@ -63,15 +63,7 @@ impl Watcher {
         if on_chain_version == version_d.spec {
             println!("going to release the {version_d:?} to {network}");
 
-            let tag = if prerelease {
-                // Tag: koi-xxxx.
-                version_d.spec.to_string()
-            } else {
-                // Tag: darwinia-vx.x.x.
-                version_d.tag
-            };
-
-            self.github.release(network.to_owned(), tag)?;
+            self.github.release(network.to_owned(), version_d.tag)?;
         } else {
             println!("{network} runtime has not been updated to the latest version yet");
 
