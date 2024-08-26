@@ -61,11 +61,6 @@ jobs:
             --arg key .substrate_node_runner.node.image \
             --arg value ${DOCKER_IMAGE_TAG} \
             '{file: $file, key: $key, value: $value}' >> /tmp/changes.json
-          jq -n \
-            --arg file playbooks/koi_nodes/host_vars/g2.testnets \
-            --arg key .substrate_node_runner.node.image \
-            --arg value ${DOCKER_IMAGE_TAG} \
-            '{file: $file, key: $key, value: $value}' >> /tmp/changes.json
 
           MULTI_CHANGES=$(jq -crs '.' < /tmp/changes.json)
           GITHUB_TOKEN=${{ secrets.GH_TKN_DARWINIA }} gh workflow run \
