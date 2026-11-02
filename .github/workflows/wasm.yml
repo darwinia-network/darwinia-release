@@ -25,7 +25,7 @@ jobs:
     if: github.event.inputs.network == 'mainnet'
     strategy:
       matrix:
-        network: [darwinia, crab]
+        network: [darwinia]
         features: [evm-tracing, force-debug]
     steps:
       - name: Setup build environment
